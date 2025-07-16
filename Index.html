@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -86,6 +86,20 @@
             font-weight: 700;
             color: #16a34a; /* Verde para victoria */
         }
+        .summary-section {
+            text-align: left;
+            margin-top: 1.5rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #e2e8f0;
+        }
+        .summary-section p {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            color: #475569;
+        }
+        .summary-section strong {
+            color: #1e293b;
+        }
         /* Media queries para responsividad */
         @media (max-width: 768px) {
             .game-container {
@@ -109,35 +123,60 @@
         <h1 class="text-3xl font-bold text-gray-800 mb-4">Mi Empresa: Decisiones y Costos</h1>
         <p class="capital-display">Capital: $<span id="capital">10,000.00</span></p>
 
-        <div id="game-area">
+        <div id="start-screen" class="flex flex-col items-center justify-center gap-6">
+            <h2 class="text-2xl font-semibold text-gray-700">¡Bienvenido a tu nueva aventura empresarial!</h2>
+            <p class="text-lg text-gray-600">Para comenzar, por favor, ingresa el nombre de tu empresa:</p>
+            <input type="text" id="company-name-input" placeholder="Nombre de tu empresa"
+                   class="p-3 border border-gray-300 rounded-lg w-full max-w-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+            <button id="start-game-button" class="game-button">Comenzar Juego</button>
+        </div>
+
+        <div id="game-area" class="hidden">
             <p id="scenario-text" class="scenario-text mb-4">¡Bienvenido a tu nueva empresa! Tienes un capital inicial de $10,000. Tus decisiones sobre los costos de transacción afectarán el éxito de tu negocio. ¡Comencemos!</p>
             <div id="decision-buttons" class="button-group">
                 <!-- Los botones se generarán aquí con JavaScript -->
-                <button id="start-game-button" class="game-button">Comenzar Juego</button>
             </div>
             <div id="message-box" class="message-box hidden"></div>
         </div>
     </div>
 
     <script>
-        // Game variables
-        let capital = 10000; // Initial capital
+        // Variables del juego
+        let companyName = ""; // Nombre de la empresa
+        let capital = 10000; // Capital inicial
+        const initialCapitalFixed = 10000; // Para el resumen final
         let round = 0;
-        const maxRounds = 7; // Increased number of rounds to accommodate new scenarios
-        const minCapital = 0; // Minimum capital to not go bankrupt
-        const winCapital = 25000; // Capital to win the game (increased target)
+        // El número de rondas se ajusta dinámicamente al tamaño de fixedScenarioOrder
+        const minCapital = 0; // Capital mínimo para no quebrar
+        const winCapital = 40000; // Capital para ganar el juego (objetivo aumentado)
 
-        // DOM elements
+        // Variables para el resumen final
+        let totalRevenueGenerated = 0;
+        let totalCostsIncurred = 0;
+        let totalTransactionCosts = 0;
+        let totalMoralImpact = 0; // Suma de moralBenefit - moralCost
+
+        // Estado del juego para rastrear decisiones clave
+        let gameState = {
+            choseQuestionableSupplier: false,
+            hadRegulatoryAudit: false, // Para asegurar que la auditoría solo ocurra una vez
+            choseEcoFriendlyOption: false, // Nuevo: para rastrear la decisión ambiental
+        };
+
+        // Elementos del DOM
         const capitalDisplay = document.getElementById('capital');
         const scenarioText = document.getElementById('scenario-text');
         const decisionButtonsDiv = document.getElementById('decision-buttons');
         const messageBox = document.getElementById('message-box');
         const startGameButton = document.getElementById('start-game-button');
+        const companyNameInput = document.getElementById('company-name-input');
+        const startScreen = document.getElementById('start-screen');
         const gameArea = document.getElementById('game-area');
 
-        // Game scenarios with decisions and their impact on capital
-        const scenarios = [
+        // Definición de todos los escenarios del juego
+        const allScenarios = [
             {
+                id: "raw_material_purchase",
                 text: "Necesitas adquirir materia prima. Tienes dos opciones:",
                 options: [
                     {
@@ -149,30 +188,32 @@
                     {
                         label: "Proveedor Internacional: $4,500 (costo de transacción variable: 10% del valor por aduanas, aranceles y seguro).",
                         cost: 4500,
-                        transactionCost: 0.10, // Calculated as a percentage
+                        transactionCost: 0.10, // Se calcula como porcentaje
                         isPercentage: true,
                         message: "Elegiste al proveedor internacional. Los costos de transacción fueron calculados."
                     }
                 ]
             },
             {
+                id: "employee_hiring",
                 text: "Debes contratar un nuevo empleado. ¿Cómo lo haces?",
                 options: [
                     {
                         label: "Agencia de Contratación: Costo fijo de $800 (incluye búsqueda y selección).",
                         cost: 800,
-                        transactionCost: 0, // The cost is already the transaction cost
+                        transactionCost: 0,
                         message: "Usaste una agencia. Ahorraste tiempo, pero pagaste por el servicio."
                     },
                     {
                         label: "Contratación Directa: Sin costo inicial, pero el tiempo de búsqueda y entrevistas te cuesta $500 en productividad perdida.",
                         cost: 0,
-                        transactionCost: 500, // Implicit transaction cost
+                        transactionCost: 500, // Costo de transacción implícito
                         message: "Contratación directa. Ahorraste dinero, pero el tiempo es oro."
                     }
                 ]
             },
             {
+                id: "product_sales",
                 text: "Es hora de vender tu producto. ¿Qué canal eliges?",
                 options: [
                     {
@@ -183,28 +224,29 @@
                     },
                     {
                         label: "Plataforma Online (Marketplace): Comisión del 15% por cada venta (costo de transacción). Estima ingresos de $3,000.",
-                        cost: -3000, // Income, but commission is subtracted
-                        transactionCost: 0.15, // Percentage commission
+                        cost: -3000, // Ingreso, pero se resta por la comisión
+                        transactionCost: 0.15, // Porcentaje de comisión
                         isPercentage: true,
-                        isIncome: true, // Indicates it's an income
+                        isIncome: true, // Indica que es un ingreso
                         message: "Usaste una plataforma online. Menos inversión, pero pagas comisión."
                     }
                 ]
             },
             {
+                id: "loan_expansion",
                 text: "Necesitas un préstamo para expandirte. ¿Qué opción tomas?",
                 options: [
                     {
                         label: "Banco Tradicional: Recibes $5,000. Costos de transacción (estudio de crédito, comisiones) fijos de $300.",
-                        cost: -5000, // Income, but transaction cost is subtracted
+                        cost: -5000, // Ingreso, pero se resta el costo de transacción
                         transactionCost: 300,
                         isIncome: true,
                         message: "Obtuviste un préstamo bancario. Los costos iniciales son claros."
                     },
                     {
                         label: "Inversor Ángel: Recibes $7,000. Costos de transacción (negociación, legal) variables: 5% del monto recibido.",
-                        cost: -7000, // Income, but transaction cost is subtracted
-                        transactionCost: 0.05, // Percentage
+                        cost: -7000, // Ingreso, pero se resta el costo de transacción
+                        transactionCost: 0.05, // Porcentaje
                         isPercentage: true,
                         isIncome: true,
                         message: "Un inversor ángel te apoya. Costos de transacción más altos, pero más capital."
@@ -212,6 +254,7 @@
                 ]
             },
             {
+                id: "accounting_system",
                 text: "Tu sistema de contabilidad es obsoleto. ¿Actualizas?",
                 options: [
                     {
@@ -229,13 +272,13 @@
                     }
                 ]
             },
-            // New scenarios to increase capital
             {
+                id: "customer_portfolio",
                 text: "Un competidor menor está en problemas y te ofrece comprar su cartera de clientes. ¿Aceptas?",
                 options: [
                     {
                         label: "Comprar Cartera: Inviertes $3,000. Se espera un aumento de ingresos de $5,000, pero hay un costo de integración (transacción) fijo de $500.",
-                        cost: -5000, // Income
+                        cost: -5000, // Ingreso
                         transactionCost: 500,
                         isIncome: true,
                         message: "Adquiriste la cartera de clientes. ¡Tu base de clientes ha crecido!"
@@ -249,29 +292,102 @@
                 ]
             },
             {
-                text: "Tienes la oportunidad de licitar por un gran contrato gubernamental. ¿Te presentas?",
+                id: "supplier_morality", // Este escenario establece una bandera en gameState
+                text: "Descubres que uno de tus proveedores actuales utiliza prácticas laborales cuestionables. Tienes la opción de seguir con ellos o cambiar a un proveedor ético más caro.",
                 options: [
                     {
-                        label: "Presentar Licitación: Costo de preparación de la oferta (transacción) de $700. Si ganas, el contrato es de $10,000.",
-                        cost: -10000, // Potential income
-                        transactionCost: 700,
-                        isIncome: true,
-                        message: "Te presentaste a la licitación. ¡Felicidades, ganaste el contrato gubernamental!"
+                        label: "Mantener Proveedor Actual: Costo del producto: $4,000. Sin costos de transacción inmediatos, pero riesgo de $1,500 en multas o mala reputación a futuro.",
+                        cost: 4000,
+                        transactionCost: 0,
+                        moralCost: 1500, // Costo futuro implícito
+                        setsFlag: "choseQuestionableSupplier", // Nueva propiedad para establecer el estado del juego
+                        message: "Continuaste con el proveedor actual. Ahorraste dinero, pero la moralidad podría pasarte factura."
                     },
                     {
-                        label: "No Presentar: Ahorras los costos de preparación, pero no obtienes el contrato.",
-                        cost: 0,
-                        transactionCost: 0,
-                        message: "Decidiste no licitar. No hay cambios en tu capital."
+                        label: "Cambiar a Proveedor Ético: Costo del producto: $5,000. Costos de transacción (due diligence, nuevos contratos) de $300. Beneficio de $500 en imagen de marca.",
+                        cost: 5000,
+                        transactionCost: 300,
+                        moralBenefit: 500, // Beneficio futuro implícito
+                        message: "Cambiaste a un proveedor ético. Tu imagen de marca mejora, pero la inversión inicial es mayor."
                     }
                 ]
             },
             {
+                id: "employee_benefits",
+                text: "Para reducir costos, se propone eliminar el beneficio de almuerzo subsidiado para tus empleados. Esto ahorraría dinero, pero podría afectar la moral y la productividad.",
+                options: [
+                    {
+                        label: "Eliminar Subsidio: Ahorro de $1,000. Riesgo de $700 en pérdida de productividad por baja moral.",
+                        cost: -1000, // Ahorro, por lo que es un impacto positivo en el capital
+                        transactionCost: 0,
+                        moralCost: 700, // Costo futuro implícito
+                        isIncome: true,
+                        message: "Eliminaste el subsidio de almuerzo. Ahorraste dinero, pero la moral del equipo podría resentirse."
+                    },
+                    {
+                        label: "Mantener Subsidio: Sin ahorro inmediato. Beneficio de $300 en aumento de productividad por alta moral.",
+                        cost: 0,
+                        transactionCost: 0,
+                        moralBenefit: 300, // Beneficio futuro implícito
+                        message: "Mantuviste el subsidio de almuerzo. La moral del equipo sigue alta, lo que podría traducirse en mayor productividad."
+                    }
+                ]
+            },
+            // Nuevo escenario: Costos Ambientales
+            {
+                id: "environmental_costs",
+                text: "Tu empresa está evaluando su impacto ambiental. Tienes la opción de invertir en prácticas más sostenibles o mantener el status quo para ahorrar costos.",
+                options: [
+                    {
+                        label: "Invertir en Sostenibilidad: Costo de $2,000 (certificaciones, nueva tecnología). Beneficio de $1,000 en imagen y eficiencia a largo plazo.",
+                        cost: 2000,
+                        transactionCost: 0,
+                        moralBenefit: 1000, // Refleja ganancia a largo plazo en imagen/eficiencia
+                        setsFlag: "choseEcoFriendlyOption", // Establece la bandera de decisión ambiental
+                        message: "Invertiste en sostenibilidad. Tu compromiso ambiental es reconocido."
+                    },
+                    {
+                        label: "Mantener Status Quo: Ahorro de $500. Riesgo de $800 en futuras multas o pérdida de clientes por mala imagen.",
+                        cost: -500, // Ahorro, por lo que es un impacto positivo en el capital
+                        transactionCost: 0,
+                        moralCost: 800, // Refleja futuras penalizaciones/pérdidas
+                        message: "Mantuviste el status quo ambiental. Ahorraste dinero, pero el riesgo aumenta."
+                    }
+                ]
+            },
+            {
+                id: "rd_investment",
+                text: "Tienes la opción de invertir en una investigación y desarrollo (I+D) de alto riesgo para un producto innovador o hacer mejoras incrementales a tu producto actual.",
+                options: [
+                    {
+                        label: "Inversión en I+D de Alto Riesgo: Costo de $4,000. Costos de transacción (legales, patentes) de $500. 30% de probabilidad de ganar $15,000, 70% de perder $2,000.",
+                        cost: 4000,
+                        transactionCost: 500,
+                        randomOutcome: {
+                            winChance: 0.30,
+                            winAmount: 15000,
+                            winMessage: "¡Tu inversión en I+D de alto riesgo fue un éxito rotundo! Nuevo producto lanzado.",
+                            loseAmount: -2000,
+                            loseMessage: "La inversión en I+D de alto riesgo no dio frutos. Pérdida de capital."
+                        },
+                        message: "Invertiste en I+D de alto riesgo."
+                    },
+                    {
+                        label: "Mejoras Incrementales: Costo de $1,000. Costos de transacción (investigación de mercado, ajustes) de $100. Ganancia segura de $1,500.",
+                        cost: 1000,
+                        transactionCost: 100,
+                        fixedOutcome: 1500, // Ganancia fija
+                        message: "Optaste por mejoras incrementales. Un camino seguro con ganancias modestas."
+                    }
+                ]
+            },
+            {
+                id: "investor_offer", // Este escenario será modificado condicionalmente
                 text: "Un inversor te ofrece capital a cambio de una participación minoritaria en tu empresa. ¿Aceptas?",
                 options: [
                     {
                         label: "Aceptar Inversión: Recibes $8,000 de capital. Costos legales y de due diligence (transacción) de $400.",
-                        cost: -8000, // Income
+                        cost: -8000, // Ingreso
                         transactionCost: 400,
                         isIncome: true,
                         message: "Aceptaste la inversión. Tu empresa tiene más capital para crecer."
@@ -285,11 +401,12 @@
                 ]
             },
             {
+                id: "volume_discount",
                 text: "Un proveedor te ofrece un descuento por volumen si compras una cantidad mayor de lo habitual. ¿Aprovechas?",
                 options: [
                     {
                         label: "Comprar en Volumen: Inviertes $7,000. Ahorras $1,000 en el costo unitario de los productos, pero hay un costo de almacenamiento (transacción) de $300.",
-                        cost: 7000 - 1000, // Actual cost after discount
+                        cost: 7000 - 1000, // Costo real después del descuento
                         transactionCost: 300,
                         message: "Compraste en volumen. Ahorraste a largo plazo, pero incurriste en costos de almacenamiento."
                     },
@@ -300,15 +417,96 @@
                         message: "Compraste la cantidad normal. Sin cambios significativos."
                     }
                 ]
+            },
+            {
+                id: "government_contract_bid", // Este escenario será modificado condicionalmente
+                text: "Tienes la oportunidad de licitar por un gran contrato gubernamental. ¿Te presentas?",
+                options: [
+                    {
+                        label: "Presentar Licitación: Costo de preparación de la oferta (transacción) de $700. Si ganas, el contrato es de $10,000.",
+                        cost: -10000, // Ingreso potencial
+                        transactionCost: 700,
+                        isIncome: true,
+                        randomOutcome: { // Resultado por defecto
+                            winChance: 0.30,
+                            winAmount: 10000,
+                            winMessage: "¡Felicidades, ganaste el contrato gubernamental!",
+                            loseAmount: 0, // Solo se pierde el costo de preparación si no se gana
+                            loseMessage: "La licitación gubernamental fue rechazada."
+                        },
+                        message: "Te presentaste a la licitación."
+                    },
+                    {
+                        label: "No Presentar: Ahorras los costos de preparación, pero no obtienes el contrato.",
+                        cost: 0,
+                        transactionCost: 0,
+                        message: "Decidiste no licitar. No hay cambios en tu capital."
+                    }
+                ]
+            },
+            // Nuevo escenario condicional: Auditoría Regulatoria
+            {
+                id: "regulatory_audit",
+                text: "Una organización reguladora ha iniciado una auditoría de tu cadena de suministro debido a reportes de prácticas cuestionables. Debes responder.",
+                options: [
+                    {
+                        label: "Cooperar Completamente: Costos legales y administrativos de $1,000. Reduce el riesgo de multas grandes.",
+                        cost: 1000,
+                        transactionCost: 0,
+                        randomOutcome: {
+                            winChance: 0.80, // Alta probabilidad de multa pequeña
+                            winAmount: -200, // Multa pequeña
+                            winMessage: "La auditoría concluyó con una multa menor por falta de supervisión.",
+                            loseAmount: -2000, // Multa mayor
+                            loseMessage: "A pesar de la cooperación, la multa fue considerable."
+                        },
+                        message: "Decidiste cooperar con la auditoría."
+                    },
+                    {
+                        label: "Minimizar Cooperación: Ahorras costos inmediatos, pero aumentas el riesgo de una multa mayor y mala reputación.",
+                        cost: 0,
+                        transactionCost: 0,
+                        randomOutcome: {
+                            winChance: 0.20, // Baja probabilidad de multa pequeña
+                            winAmount: -500, // Multa media
+                            winMessage: "Lograste minimizar la multa, pero tu reputación está en riesgo.",
+                            loseAmount: -5000, // Multa muy grande
+                            loseMessage: "La falta de cooperación resultó en una multa severa y un golpe a tu imagen."
+                        },
+                        message: "Decidiste minimizar la cooperación."
+                    }
+                ]
             }
         ];
 
-        // Function to update capital display
+        // Define el orden fijo de los escenarios para que el juego tenga una progresión
+        // Los escenarios condicionales se insertarán o modificarán dentro de este flujo.
+        const fixedScenarioOrder = [
+            "raw_material_purchase",
+            "employee_hiring",
+            "product_sales",
+            "loan_expansion",
+            "accounting_system",
+            "customer_portfolio",
+            "supplier_morality", // Aquí se toma la decisión del proveedor cuestionable
+            "employee_benefits",
+            "environmental_costs", // NUEVO: Escenario de costos ambientales
+            "rd_investment",
+            "investor_offer", // Este escenario puede ser afectado por la decisión ambiental
+            "volume_discount",
+            "government_contract_bid", // Este escenario puede ser afectado por el proveedor cuestionable
+        ];
+
+        // Ajustar maxRounds según el número de escenarios en el orden fijo
+        const maxRounds = fixedScenarioOrder.length;
+
+
+        // Función para actualizar la visualización del capital
         function updateCapitalDisplay() {
             capitalDisplay.textContent = capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         }
 
-        // Function to show a message in the message box
+        // Función para mostrar un mensaje en la caja de mensajes
         function showMessage(msg, isError = false) {
             messageBox.textContent = msg;
             messageBox.classList.remove('hidden');
@@ -321,18 +519,27 @@
             }
         }
 
-        // Function to hide the message
+        // Función para ocultar el mensaje
         function hideMessage() {
             messageBox.classList.add('hidden');
         }
 
-        // Function to handle player's decision
+        // Función para manejar la decisión del jugador
         function makeDecision(optionIndex) {
-            hideMessage(); // Hide previous message
-            const currentScenario = scenarios[round];
+            hideMessage(); // Oculta el mensaje anterior
+            // Obtenemos el escenario que se mostró, no el que está en 'round' directamente
+            // ya que 'loadNextScenario' puede haberlo modificado o insertado.
+            const currentScenarioId = scenarioText.dataset.currentScenarioId; // Obtenemos el ID del escenario actual
+            const currentScenario = allScenarios.find(s => s.id === currentScenarioId);
+
+            if (!currentScenario) {
+                console.error("Error: Escenario actual no encontrado.");
+                return;
+            }
+
             const chosenOption = currentScenario.options[optionIndex];
 
-            let actualValue = chosenOption.cost; // This can be a cost or an income
+            let actualValue = chosenOption.cost;
             let calculatedTransactionCost = 0;
 
             if (chosenOption.isPercentage) {
@@ -341,45 +548,147 @@
                 calculatedTransactionCost = chosenOption.transactionCost;
             }
 
+            // Actualizar totales para el resumen
             if (chosenOption.isIncome) {
-                capital += (Math.abs(actualValue) - calculatedTransactionCost); // Add net income
+                totalRevenueGenerated += Math.abs(actualValue); // Ingreso bruto
+                capital += (Math.abs(actualValue) - calculatedTransactionCost);
             } else {
-                capital -= (actualValue + calculatedTransactionCost); // Subtract total cost
+                totalCostsIncurred += actualValue; // Gasto bruto
+                capital -= (actualValue + calculatedTransactionCost);
             }
+            totalTransactionCosts += calculatedTransactionCost;
+
+
+            // Aplicar costos/beneficios de moralidad
+            if (chosenOption.moralCost) {
+                capital -= chosenOption.moralCost;
+                totalMoralImpact -= chosenOption.moralCost;
+                chosenOption.message += ` (Costo moral incurrido: $${chosenOption.moralCost.toLocaleString('en-US')})`;
+            }
+            if (chosenOption.moralBenefit) {
+                capital += chosenOption.moralBenefit;
+                totalMoralImpact += chosenOption.moralBenefit;
+                chosenOption.message += ` (Beneficio moral obtenido: $${chosenOption.moralBenefit.toLocaleString('en-US')})`;
+            }
+
+            // Aplicar resultados aleatorios o fijos para escenarios complejos
+            if (chosenOption.randomOutcome) {
+                let outcomeMessage = "";
+                let outcomeImpact = 0;
+                if (Math.random() < chosenOption.randomOutcome.winChance) {
+                    outcomeImpact = chosenOption.randomOutcome.winAmount;
+                    outcomeMessage = chosenOption.randomOutcome.winMessage;
+                    totalRevenueGenerated += outcomeImpact; // Sumar al ingreso si es positivo
+                } else {
+                    outcomeImpact = chosenOption.randomOutcome.loseAmount;
+                    outcomeMessage = chosenOption.randomOutcome.loseMessage;
+                    totalCostsIncurred += Math.abs(outcomeImpact); // Sumar al costo si es negativo
+                }
+                capital += outcomeImpact;
+                chosenOption.message += ` ${outcomeMessage}`;
+            } else if (chosenOption.fixedOutcome) {
+                capital += chosenOption.fixedOutcome;
+                totalRevenueGenerated += chosenOption.fixedOutcome; // Sumar al ingreso
+                chosenOption.message += ` (Ganancia adicional: $${chosenOption.fixedOutcome.toLocaleString('en-US')})`;
+            }
+
+            // --- Actualizar Estado del Juego basado en la decisión ---
+            if (currentScenario.id === "supplier_morality" && optionIndex === 0) {
+                gameState.choseQuestionableSupplier = true;
+            } else if (currentScenario.id === "environmental_costs") {
+                if (optionIndex === 0) { // Invertir en Sostenibilidad
+                    gameState.choseEcoFriendlyOption = true;
+                } else { // Mantener Status Quo
+                    gameState.choseEcoFriendlyOption = false;
+                }
+            }
+            // --- Fin Actualizar Estado del Juego ---
 
             updateCapitalDisplay();
             showMessage(chosenOption.message + ` Capital actual: $${capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`);
 
-            // Check if game has ended
+            // Verificar si el juego ha terminado
             setTimeout(() => {
-                round++;
+                round++; // Avanzar el contador de ronda general
                 if (capital <= minCapital) {
-                    endGame(false); // Lost
+                    endGame(false); // Perdió
                 } else if (capital >= winCapital) {
-                    endGame(true); // Won
+                    endGame(true); // Ganó
                 } else if (round >= maxRounds) {
-                    endGame(capital >= 10000); // If capital is equal or more than initial capital at the end of rounds, "won"
+                    endGame(capital >= initialCapitalFixed); // Si al final de las rondas tiene más o igual al capital inicial, "gana"
                 } else {
                     loadNextScenario();
                 }
-            }, 2000); // Wait 2 seconds before next round or game over
+            }, 2000); // Espera 2 segundos antes de la siguiente ronda o fin del juego
         }
 
-        // Function to load the next scenario
+        // Función para cargar el siguiente escenario
         function loadNextScenario() {
-            // Randomly select a scenario to make the game more dynamic
-            const availableScenarios = scenarios.filter((_, index) => index >= round); // Ensure we don't repeat scenarios from previous rounds if maxRounds is less than total scenarios
-            const nextScenario = availableScenarios[0]; // For now, just take the next in sequence. Could randomize later.
+            let scenarioToDisplay = null;
+            let baseScenarioId = fixedScenarioOrder[round];
+            let baseScenario = allScenarios.find(s => s.id === baseScenarioId);
 
-            if (!nextScenario) { // If no more scenarios, end the game
-                endGame(capital >= 10000);
+            if (!baseScenario) { // No hay más escenarios en el orden fijo
+                endGame(capital >= initialCapitalFixed);
                 return;
             }
 
-            scenarioText.textContent = nextScenario.text;
-            decisionButtonsDiv.innerHTML = ''; // Clear previous buttons
+            // Crear una copia profunda para evitar modificar el objeto original del escenario
+            scenarioToDisplay = JSON.parse(JSON.stringify(baseScenario));
 
-            nextScenario.options.forEach((option, index) => {
+            // --- Lógica Condicional ---
+
+            // Condición 1: Auditoría Regulatoria después de elegir proveedor cuestionable
+            // Insertamos la auditoría si se eligió el proveedor cuestionable y aún no ha ocurrido la auditoría.
+            // La auditoría se insertará en la ronda 7 (después de 'supplier_morality').
+            if (round === 7 && gameState.choseQuestionableSupplier && !gameState.hadRegulatoryAudit) {
+                scenarioToDisplay = allScenarios.find(s => s.id === "regulatory_audit");
+                gameState.hadRegulatoryAudit = true; // Marcar que la auditoría ya ocurrió
+            }
+            // Condición 2: Contrato Gubernamental afectado por proveedor cuestionable
+            else if (scenarioToDisplay.id === "government_contract_bid" && gameState.choseQuestionableSupplier) {
+                scenarioToDisplay.text = "Debido a investigaciones recientes sobre tus proveedores, la licitación gubernamental es más estricta. ¿Te presentas?";
+                // Ajustar la probabilidad de éxito y los mensajes para la opción afectada
+                const affectedOption = scenarioToDisplay.options[0]; // Asumiendo que es la primera opción
+                affectedOption.randomOutcome = {
+                    winChance: 0.15, // Probabilidad reducida
+                    winAmount: 10000,
+                    winMessage: "¡Sorprendentemente, ganaste el contrato gubernamental a pesar de los rumores!",
+                    loseAmount: 0, // Solo se pierde el costo de preparación (ya manejado por transactionCost)
+                    loseMessage: "La licitación gubernamental fue rechazada debido a preocupaciones sobre tu cadena de suministro."
+                };
+            }
+            // Condición 3: Inversor afectado por costos ambientales
+            else if (scenarioToDisplay.id === "investor_offer") {
+                if (gameState.choseEcoFriendlyOption) {
+                    scenarioToDisplay.text = "Un inversor interesado en empresas sostenibles te ofrece capital. ¿Aceptas?";
+                    scenarioToDisplay.options[0] = { // Modificar la opción 'Aceptar Inversión'
+                        label: "Aceptar Inversión: Recibes $9,000 de capital. Costos legales y de due diligence (transacción) de $300.",
+                        cost: -9000, // Más ingreso
+                        transactionCost: 300, // Menor costo de transacción
+                        isIncome: true,
+                        message: "Aceptaste la inversión. Tu reputación sostenible atrajo mejores términos."
+                    };
+                } else {
+                    scenarioToDisplay.text = "Un inversor cauteloso te ofrece capital, pero con términos más estrictos debido a preocupaciones sobre prácticas empresariales. ¿Aceptas?";
+                    scenarioToDisplay.options[0] = { // Modificar la opción 'Aceptar Inversión'
+                        label: "Aceptar Inversión: Recibes $7,000 de capital. Costos legales y de due diligence (transacción) de $500.",
+                        cost: -7000, // Menos ingreso
+                        transactionCost: 500, // Mayor costo de transacción
+                        isIncome: true,
+                        message: "Aceptaste la inversión. Los términos son menos favorables."
+                    };
+                }
+            }
+
+            // --- Fin Lógica Condicional ---
+
+            scenarioText.textContent = scenarioToDisplay.text;
+            // Guardar el ID del escenario actual en un atributo de datos para usarlo en makeDecision
+            scenarioText.dataset.currentScenarioId = scenarioToDisplay.id;
+            decisionButtonsDiv.innerHTML = ''; // Limpiar botones anteriores
+
+            scenarioToDisplay.options.forEach((option, index) => {
                 const button = document.createElement('button');
                 button.className = 'game-button';
                 button.textContent = option.label;
@@ -388,44 +697,88 @@
             });
         }
 
-        // Function to start the game
+        // Función para iniciar el juego
         function startGame() {
-            capital = 10000;
-            round = 0;
-            updateCapitalDisplay();
-            gameArea.classList.remove('hidden');
-            startGameButton.classList.add('hidden'); // Hide start button
-            loadNextScenario();
-            showMessage("¡El juego ha comenzado! Tu capital inicial es $10,000.");
-        }
-
-        // Function to end the game
-        function endGame(hasWon) {
-            decisionButtonsDiv.innerHTML = ''; // Clear buttons
-            hideMessage(); // Hide any previous message
-            if (hasWon) {
-                scenarioText.innerHTML = `<span class="game-win-message">¡Felicidades! Has gestionado tu empresa con éxito y alcanzado un capital de $${capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.</span>`;
-            } else {
-                scenarioText.innerHTML = `<span class="game-over-message">¡Juego Terminado! Tu empresa ha quebrado o no alcanzó los objetivos. Capital final: $${capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.</span>`;
+            companyName = companyNameInput.value.trim();
+            if (companyName === "") {
+                alert("Por favor, ingresa el nombre de tu empresa para comenzar."); // Usar alert solo aquí, ya que es la pantalla de inicio
+                return;
             }
-            // Show restart game button
-            const restartButton = document.createElement('button');
-            restartButton.className = 'game-button mt-4';
-            restartButton.textContent = 'Jugar de Nuevo';
-            restartButton.onclick = () => {
-                gameArea.classList.remove('hidden');
-                restartButton.remove();
-                startGame();
+
+            capital = initialCapitalFixed; // Reiniciar capital
+            round = 0;
+            totalRevenueGenerated = 0;
+            totalCostsIncurred = 0;
+            totalTransactionCosts = 0;
+            totalMoralImpact = 0;
+            gameState = { // Reiniciar el estado del juego
+                choseQuestionableSupplier: false,
+                hadRegulatoryAudit: false,
+                choseEcoFriendlyOption: false,
             };
-            decisionButtonsDiv.appendChild(restartButton);
+            updateCapitalDisplay();
+            startScreen.classList.add('hidden'); // Ocultar pantalla de inicio
+            gameArea.classList.remove('hidden'); // Mostrar área de juego
+            loadNextScenario();
+            showMessage(`¡El juego ha comenzado para ${companyName}! Tu capital inicial es $${initialCapitalFixed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`);
         }
 
-        // Event listener for the start button
+        // Función para finalizar el juego
+        function endGame(hasWon) {
+            gameArea.classList.add('hidden'); // Ocultar área de juego
+            startScreen.classList.remove('hidden'); // Mostrar pantalla de inicio para el botón de reiniciar
+            startScreen.innerHTML = ''; // Limpiar contenido de la pantalla de inicio
+
+            let finalMessage = "";
+            if (hasWon) {
+                finalMessage = `<span class="game-win-message">¡Felicidades, ${companyName}! Has gestionado tu empresa con éxito.</span>`;
+            } else {
+                finalMessage = `<span class="game-over-message">¡Juego Terminado para ${companyName}! Tu empresa ha quebrado o no alcanzó los objetivos.</span>`;
+            }
+
+            const netProfitLoss = capital - initialCapitalFixed;
+            const netProfitLossClass = netProfitLoss >= 0 ? 'text-green-700' : 'text-red-700';
+
+            // Crear el resumen final
+            const summaryHTML = `
+                <h2 class="text-2xl font-semibold text-gray-700 mb-4">${finalMessage}</h2>
+                <div class="summary-section">
+                    <p><strong>Capital Inicial:</strong> $${initialCapitalFixed.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p><strong>Capital Final:</strong> $${capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p class="text-lg font-bold ${netProfitLossClass}">
+                        ${netProfitLoss >= 0 ? 'Ganancia Neta:' : 'Pérdida Neta:'} $${netProfitLoss.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    </p>
+                    <p><strong>Ingresos Brutos Totales:</strong> $${totalRevenueGenerated.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p><strong>Costos Brutos Totales (sin transacciones):</strong> $${totalCostsIncurred.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p><strong>Costos de Transacción Acumulados:</strong> $${totalTransactionCosts.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <p><strong>Impacto Moral Neto:</strong> $${totalMoralImpact.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                </div>
+                <button id="restart-game-button" class="game-button mt-6">Jugar de Nuevo</button>
+            `;
+            startScreen.innerHTML = summaryHTML;
+
+            // Añadir event listener al nuevo botón de reiniciar
+            document.getElementById('restart-game-button').addEventListener('click', () => {
+                startScreen.innerHTML = `
+                    <h2 class="text-2xl font-semibold text-gray-700">¡Bienvenido a tu nueva aventura empresarial!</h2>
+                    <p class="text-lg text-gray-600">Para comenzar, por favor, ingresa el nombre de tu empresa:</p>
+                    <input type="text" id="company-name-input" placeholder="Nombre de tu empresa"
+                           class="p-3 border border-gray-300 rounded-lg w-full max-w-sm text-center text-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <button id="start-game-button" class="game-button">Comenzar Juego</button>
+                `;
+                // Re-attach event listener to the new start button
+                document.getElementById('start-game-button').addEventListener('click', startGame);
+                // Clear the input field for the new game
+                document.getElementById('company-name-input').value = "";
+                updateCapitalDisplay(); // Reset capital display to initial
+            });
+        }
+
+        // Event listener para el botón de inicio (en la pantalla inicial)
         startGameButton.addEventListener('click', startGame);
 
-        // Initialize screen (only show start button at the beginning)
+        // Inicializar la pantalla (solo mostrar el botón de inicio al principio)
         updateCapitalDisplay();
-        scenarioText.textContent = "¡Bienvenido a tu nueva empresa! Tienes un capital inicial de $10,000. Tus decisiones sobre los costos de transacción afectarán el éxito de tu negocio. Haz clic en 'Comenzar Juego' para empezar.";
     </script>
 </body>
 </html>

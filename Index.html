@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Empresa: Decisiones y Costos de Transacción</title>
+    <!-- Carga de Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Estilos personalizados para la fuente y el fondo */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Un color de fondo suave */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px; /* Padding para evitar que el contenido toque los bordes en pantallas pequeñas */
+            box-sizing: border-box;
+        }
+        .game-container {
+            background-color: #ffffff;
+            border-radius: 1.5rem; /* Bordes más redondeados */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Sombra más pronunciada */
+            padding: 2.5rem;
+            max-width: 900px; /* Ancho máximo para el contenedor del juego */
+            width: 100%;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+        .button-group {
+            display: flex;
+            flex-wrap: wrap; /* Permite que los botones se envuelvan en pantallas pequeñas */
+            gap: 0.75rem; /* Espacio entre botones */
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+        .game-button {
+            background-color: #4f46e5; /* Morado vibrante */
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.75rem; /* Bordes redondeados para botones */
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            flex-grow: 1; /* Permite que los botones crezcan para llenar el espacio */
+            min-width: 150px; /* Ancho mínimo para los botones */
+        }
+        .game-button:hover {
+            background-color: #6366f1; /* Tono más claro al pasar el ratón */
+            transform: translateY(-2px); /* Pequeño efecto de elevación */
+        }
+        .game-button:active {
+            transform: translateY(0);
+        }
+        .message-box {
+            background-color: #e0f2fe; /* Azul claro para mensajes */
+            color: #0c4a6e;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            margin-top: 1rem;
+            text-align: left;
+            font-size: 0.95rem;
+        }
+        .capital-display {
+            font-size: 2.25rem; /* Tamaño de fuente más grande para el capital */
+            font-weight: 700;
+            color: #1e3a8a; /* Azul oscuro */
+            margin-bottom: 1rem;
+        }
+        .scenario-text {
+            font-size: 1.15rem;
+            color: #334155; /* Gris oscuro */
+            line-height: 1.6;
+        }
+        .game-over-message {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #dc2626; /* Rojo para game over */
+        }
+        .game-win-message {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #16a34a; /* Verde para victoria */
+        }
+        /* Media queries para responsividad */
+        @media (max-width: 768px) {
+            .game-container {
+                padding: 1.5rem;
+            }
+            .capital-display {
+                font-size: 1.75rem;
+            }
+            .scenario-text {
+                font-size: 1rem;
+            }
+            .game-button {
+                padding: 0.6rem 1rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Mi Empresa: Decisiones y Costos</h1>
+        <p class="capital-display">Capital: $<span id="capital">10,000.00</span></p>
+
+        <div id="game-area">
+            <p id="scenario-text" class="scenario-text mb-4">¡Bienvenido a tu nueva empresa! Tienes un capital inicial de $10,000. Tus decisiones sobre los costos de transacción afectarán el éxito de tu negocio. ¡Comencemos!</p>
+            <div id="decision-buttons" class="button-group">
+                <!-- Los botones se generarán aquí con JavaScript -->
+                <button id="start-game-button" class="game-button">Comenzar Juego</button>
+            </div>
+            <div id="message-box" class="message-box hidden"></div>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        let capital = 10000; // Initial capital
+        let round = 0;
+        const maxRounds = 7; // Increased number of rounds to accommodate new scenarios
+        const minCapital = 0; // Minimum capital to not go bankrupt
+        const winCapital = 25000; // Capital to win the game (increased target)
+
+        // DOM elements
+        const capitalDisplay = document.getElementById('capital');
+        const scenarioText = document.getElementById('scenario-text');
+        const decisionButtonsDiv = document.getElementById('decision-buttons');
+        const messageBox = document.getElementById('message-box');
+        const startGameButton = document.getElementById('start-game-button');
+        const gameArea = document.getElementById('game-area');
+
+        // Game scenarios with decisions and their impact on capital
+        const scenarios = [
+            {
+                text: "Necesitas adquirir materia prima. Tienes dos opciones:",
+                options: [
+                    {
+                        label: "Proveedor Local: $5,000 (costo fijo de transacción: $200 por transporte y papeleo).",
+                        cost: 5000,
+                        transactionCost: 200,
+                        message: "Elegiste al proveedor local. Costo total: $5,200. Transacción eficiente."
+                    },
+                    {
+                        label: "Proveedor Internacional: $4,500 (costo de transacción variable: 10% del valor por aduanas, aranceles y seguro).",
+                        cost: 4500,
+                        transactionCost: 0.10, // Calculated as a percentage
+                        isPercentage: true,
+                        message: "Elegiste al proveedor internacional. Los costos de transacción fueron calculados."
+                    }
+                ]
+            },
+            {
+                text: "Debes contratar un nuevo empleado. ¿Cómo lo haces?",
+                options: [
+                    {
+                        label: "Agencia de Contratación: Costo fijo de $800 (incluye búsqueda y selección).",
+                        cost: 800,
+                        transactionCost: 0, // The cost is already the transaction cost
+                        message: "Usaste una agencia. Ahorraste tiempo, pero pagaste por el servicio."
+                    },
+                    {
+                        label: "Contratación Directa: Sin costo inicial, pero el tiempo de búsqueda y entrevistas te cuesta $500 en productividad perdida.",
+                        cost: 0,
+                        transactionCost: 500, // Implicit transaction cost
+                        message: "Contratación directa. Ahorraste dinero, pero el tiempo es oro."
+                    }
+                ]
+            },
+            {
+                text: "Es hora de vender tu producto. ¿Qué canal eliges?",
+                options: [
+                    {
+                        label: "Tienda Física Propia: Inversión inicial de $1,500 en alquiler y adecuación. Costo de transacción fijo: $100 por mantenimiento.",
+                        cost: 1500,
+                        transactionCost: 100,
+                        message: "Abriste tu tienda. Gran inversión, pero control total."
+                    },
+                    {
+                        label: "Plataforma Online (Marketplace): Comisión del 15% por cada venta (costo de transacción). Estima ingresos de $3,000.",
+                        cost: -3000, // Income, but commission is subtracted
+                        transactionCost: 0.15, // Percentage commission
+                        isPercentage: true,
+                        isIncome: true, // Indicates it's an income
+                        message: "Usaste una plataforma online. Menos inversión, pero pagas comisión."
+                    }
+                ]
+            },
+            {
+                text: "Necesitas un préstamo para expandirte. ¿Qué opción tomas?",
+                options: [
+                    {
+                        label: "Banco Tradicional: Recibes $5,000. Costos de transacción (estudio de crédito, comisiones) fijos de $300.",
+                        cost: -5000, // Income, but transaction cost is subtracted
+                        transactionCost: 300,
+                        isIncome: true,
+                        message: "Obtuviste un préstamo bancario. Los costos iniciales son claros."
+                    },
+                    {
+                        label: "Inversor Ángel: Recibes $7,000. Costos de transacción (negociación, legal) variables: 5% del monto recibido.",
+                        cost: -7000, // Income, but transaction cost is subtracted
+                        transactionCost: 0.05, // Percentage
+                        isPercentage: true,
+                        isIncome: true,
+                        message: "Un inversor ángel te apoya. Costos de transacción más altos, pero más capital."
+                    }
+                ]
+            },
+            {
+                text: "Tu sistema de contabilidad es obsoleto. ¿Actualizas?",
+                options: [
+                    {
+                        label: "Software Estándar: Costo fijo de $600. Incluye instalación y soporte básico (costo de transacción por implementación).",
+                        cost: 600,
+                        transactionCost: 0,
+                        message: "Actualizaste a un software estándar. Mejora la eficiencia."
+                    },
+                    {
+                        label: "Desarrollo a Medida: Costo inicial de $1,000. Costos de transacción variables por personalización y pruebas: 20% del costo inicial.",
+                        cost: 1000,
+                        transactionCost: 0.20,
+                        isPercentage: true,
+                        message: "Optaste por desarrollo a medida. Más caro, pero se adapta perfectamente."
+                    }
+                ]
+            },
+            // New scenarios to increase capital
+            {
+                text: "Un competidor menor está en problemas y te ofrece comprar su cartera de clientes. ¿Aceptas?",
+                options: [
+                    {
+                        label: "Comprar Cartera: Inviertes $3,000. Se espera un aumento de ingresos de $5,000, pero hay un costo de integración (transacción) fijo de $500.",
+                        cost: -5000, // Income
+                        transactionCost: 500,
+                        isIncome: true,
+                        message: "Adquiriste la cartera de clientes. ¡Tu base de clientes ha crecido!"
+                    },
+                    {
+                        label: "No Comprar: No hay inversión ni riesgo, pero pierdes la oportunidad de crecimiento.",
+                        cost: 0,
+                        transactionCost: 0,
+                        message: "Decidiste no comprar. No hay cambios en tu capital."
+                    }
+                ]
+            },
+            {
+                text: "Tienes la oportunidad de licitar por un gran contrato gubernamental. ¿Te presentas?",
+                options: [
+                    {
+                        label: "Presentar Licitación: Costo de preparación de la oferta (transacción) de $700. Si ganas, el contrato es de $10,000.",
+                        cost: -10000, // Potential income
+                        transactionCost: 700,
+                        isIncome: true,
+                        message: "Te presentaste a la licitación. ¡Felicidades, ganaste el contrato gubernamental!"
+                    },
+                    {
+                        label: "No Presentar: Ahorras los costos de preparación, pero no obtienes el contrato.",
+                        cost: 0,
+                        transactionCost: 0,
+                        message: "Decidiste no licitar. No hay cambios en tu capital."
+                    }
+                ]
+            },
+            {
+                text: "Un inversor te ofrece capital a cambio de una participación minoritaria en tu empresa. ¿Aceptas?",
+                options: [
+                    {
+                        label: "Aceptar Inversión: Recibes $8,000 de capital. Costos legales y de due diligence (transacción) de $400.",
+                        cost: -8000, // Income
+                        transactionCost: 400,
+                        isIncome: true,
+                        message: "Aceptaste la inversión. Tu empresa tiene más capital para crecer."
+                    },
+                    {
+                        label: "Rechazar Inversión: Mantienes el 100% de la propiedad, pero no recibes capital adicional.",
+                        cost: 0,
+                        transactionCost: 0,
+                        message: "Rechazaste la inversión. No hay cambios en tu capital."
+                    }
+                ]
+            },
+            {
+                text: "Un proveedor te ofrece un descuento por volumen si compras una cantidad mayor de lo habitual. ¿Aprovechas?",
+                options: [
+                    {
+                        label: "Comprar en Volumen: Inviertes $7,000. Ahorras $1,000 en el costo unitario de los productos, pero hay un costo de almacenamiento (transacción) de $300.",
+                        cost: 7000 - 1000, // Actual cost after discount
+                        transactionCost: 300,
+                        message: "Compraste en volumen. Ahorraste a largo plazo, pero incurriste en costos de almacenamiento."
+                    },
+                    {
+                        label: "Comprar Cantidad Normal: Pagas $5,000. Sin costos adicionales, pero sin el descuento por volumen.",
+                        cost: 5000,
+                        transactionCost: 0,
+                        message: "Compraste la cantidad normal. Sin cambios significativos."
+                    }
+                ]
+            }
+        ];
+
+        // Function to update capital display
+        function updateCapitalDisplay() {
+            capitalDisplay.textContent = capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        // Function to show a message in the message box
+        function showMessage(msg, isError = false) {
+            messageBox.textContent = msg;
+            messageBox.classList.remove('hidden');
+            if (isError) {
+                messageBox.classList.remove('bg-blue-100', 'text-blue-900');
+                messageBox.classList.add('bg-red-100', 'text-red-800');
+            } else {
+                messageBox.classList.remove('bg-red-100', 'text-red-800');
+                messageBox.classList.add('bg-blue-100', 'text-blue-900');
+            }
+        }
+
+        // Function to hide the message
+        function hideMessage() {
+            messageBox.classList.add('hidden');
+        }
+
+        // Function to handle player's decision
+        function makeDecision(optionIndex) {
+            hideMessage(); // Hide previous message
+            const currentScenario = scenarios[round];
+            const chosenOption = currentScenario.options[optionIndex];
+
+            let actualValue = chosenOption.cost; // This can be a cost or an income
+            let calculatedTransactionCost = 0;
+
+            if (chosenOption.isPercentage) {
+                calculatedTransactionCost = Math.abs(actualValue) * chosenOption.transactionCost;
+            } else {
+                calculatedTransactionCost = chosenOption.transactionCost;
+            }
+
+            if (chosenOption.isIncome) {
+                capital += (Math.abs(actualValue) - calculatedTransactionCost); // Add net income
+            } else {
+                capital -= (actualValue + calculatedTransactionCost); // Subtract total cost
+            }
+
+            updateCapitalDisplay();
+            showMessage(chosenOption.message + ` Capital actual: $${capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`);
+
+            // Check if game has ended
+            setTimeout(() => {
+                round++;
+                if (capital <= minCapital) {
+                    endGame(false); // Lost
+                } else if (capital >= winCapital) {
+                    endGame(true); // Won
+                } else if (round >= maxRounds) {
+                    endGame(capital >= 10000); // If capital is equal or more than initial capital at the end of rounds, "won"
+                } else {
+                    loadNextScenario();
+                }
+            }, 2000); // Wait 2 seconds before next round or game over
+        }
+
+        // Function to load the next scenario
+        function loadNextScenario() {
+            // Randomly select a scenario to make the game more dynamic
+            const availableScenarios = scenarios.filter((_, index) => index >= round); // Ensure we don't repeat scenarios from previous rounds if maxRounds is less than total scenarios
+            const nextScenario = availableScenarios[0]; // For now, just take the next in sequence. Could randomize later.
+
+            if (!nextScenario) { // If no more scenarios, end the game
+                endGame(capital >= 10000);
+                return;
+            }
+
+            scenarioText.textContent = nextScenario.text;
+            decisionButtonsDiv.innerHTML = ''; // Clear previous buttons
+
+            nextScenario.options.forEach((option, index) => {
+                const button = document.createElement('button');
+                button.className = 'game-button';
+                button.textContent = option.label;
+                button.onclick = () => makeDecision(index);
+                decisionButtonsDiv.appendChild(button);
+            });
+        }
+
+        // Function to start the game
+        function startGame() {
+            capital = 10000;
+            round = 0;
+            updateCapitalDisplay();
+            gameArea.classList.remove('hidden');
+            startGameButton.classList.add('hidden'); // Hide start button
+            loadNextScenario();
+            showMessage("¡El juego ha comenzado! Tu capital inicial es $10,000.");
+        }
+
+        // Function to end the game
+        function endGame(hasWon) {
+            decisionButtonsDiv.innerHTML = ''; // Clear buttons
+            hideMessage(); // Hide any previous message
+            if (hasWon) {
+                scenarioText.innerHTML = `<span class="game-win-message">¡Felicidades! Has gestionado tu empresa con éxito y alcanzado un capital de $${capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.</span>`;
+            } else {
+                scenarioText.innerHTML = `<span class="game-over-message">¡Juego Terminado! Tu empresa ha quebrado o no alcanzó los objetivos. Capital final: $${capital.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.</span>`;
+            }
+            // Show restart game button
+            const restartButton = document.createElement('button');
+            restartButton.className = 'game-button mt-4';
+            restartButton.textContent = 'Jugar de Nuevo';
+            restartButton.onclick = () => {
+                gameArea.classList.remove('hidden');
+                restartButton.remove();
+                startGame();
+            };
+            decisionButtonsDiv.appendChild(restartButton);
+        }
+
+        // Event listener for the start button
+        startGameButton.addEventListener('click', startGame);
+
+        // Initialize screen (only show start button at the beginning)
+        updateCapitalDisplay();
+        scenarioText.textContent = "¡Bienvenido a tu nueva empresa! Tienes un capital inicial de $10,000. Tus decisiones sobre los costos de transacción afectarán el éxito de tu negocio. Haz clic en 'Comenzar Juego' para empezar.";
+    </script>
+</body>
+</html>

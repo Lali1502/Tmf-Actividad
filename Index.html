@@ -1,4 +1,4 @@
-
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -180,17 +180,18 @@
                 text: "Necesitas adquirir materia prima. Tienes dos opciones:",
                 options: [
                     {
-                        label: "Proveedor Local: $5,000 (costo fijo de transacción: $200 por transporte y papeleo).",
+                        label: "Proveedor Local: $5,000 (costo fijo de transacción: $200 por transporte y papeleo). Beneficio por impulso a la economía local: $300.",
                         cost: 5000,
                         transactionCost: 200,
-                        message: "Elegiste al proveedor local. Costo total: $5,200. Transacción eficiente."
+                        localEconomyBenefit: 300, // Beneficio por impulso a la economía local
+                        message: "¡Victoria en costos! Elegiste al proveedor local, asegurando una transacción eficiente por $5,200. Además, ¡impulsaste la economía local!"
                     },
                     {
                         label: "Proveedor Internacional: $4,500 (costo de transacción variable: 10% del valor por aduanas, aranceles y seguro).",
                         cost: 4500,
                         transactionCost: 0.10, // Se calcula como porcentaje
                         isPercentage: true,
-                        message: "Elegiste al proveedor internacional. Los costos de transacción fueron calculados."
+                        message: "¡Riesgo calculado! Elegiste al proveedor internacional. Los costos de transacción fueron calculados, ¿valdrá la pena?"
                     }
                 ]
             },
@@ -199,16 +200,17 @@
                 text: "Debes contratar un nuevo empleado. ¿Cómo lo haces?",
                 options: [
                     {
-                        label: "Agencia de Contratación: Costo fijo de $800 (incluye búsqueda y selección).",
+                        label: "Agencia de Contratación: Costo fijo de $800 (incluye búsqueda y selección). Riesgo moral por falta de control: $400.",
                         cost: 800,
                         transactionCost: 0,
-                        message: "Usaste una agencia. Ahorraste tiempo, pero pagaste por el servicio."
+                        moralCost: 400, // Nuevo costo moral por falta de control
+                        message: "¡Delegación inteligente! Usaste una agencia, ahorrando tiempo crucial, aunque con un costo. Ten en cuenta el riesgo moral por la falta de control en la selección."
                     },
                     {
                         label: "Contratación Directa: Sin costo inicial, pero el tiempo de búsqueda y entrevistas te cuesta $500 en productividad perdida.",
                         cost: 0,
                         transactionCost: 500, // Costo de transacción implícito
-                        message: "Contratación directa. Ahorraste dinero, pero el tiempo es oro."
+                        message: "¡Austeridad en acción! Optaste por la contratación directa, ahorrando capital a costa de tiempo valioso."
                     }
                 ]
             },
@@ -217,10 +219,12 @@
                 text: "Es hora de vender tu producto. ¿Qué canal eliges?",
                 options: [
                     {
-                        label: "Tienda Física Propia: Inversión inicial de $1,500 en alquiler y adecuación. Costo de transacción fijo: $100 por mantenimiento.",
-                        cost: 1500,
+                        label: "Tienda Física Propia: Inversión inicial de $1,500 en alquiler y adecuación. Costo de transacción fijo: $100 por mantenimiento. Ingresos estimados: $4,000. Beneficio por poder de mercado: $500.",
+                        cost: 1500, // Costo de inversión
                         transactionCost: 100,
-                        message: "Abriste tu tienda. Gran inversión, pero control total."
+                        estimatedIncome: 4000, // Ingresos estimados por la tienda
+                        marketPowerBenefit: 500, // Beneficio por poder de mercado
+                        message: "¡Expansión audaz y estratégica! Abriste tu propia tienda, una inversión con control total del mercado y un impulso significativo en ingresos y poder."
                     },
                     {
                         label: "Plataforma Online (Marketplace): Comisión del 15% por cada venta (costo de transacción). Estima ingresos de $3,000.",
@@ -228,28 +232,36 @@
                         transactionCost: 0.15, // Porcentaje de comisión
                         isPercentage: true,
                         isIncome: true, // Indica que es un ingreso
-                        message: "Usaste una plataforma online. Menos inversión, pero pagas comisión."
+                        message: "¡Agilidad digital! Usaste una plataforma online, minimizando la inversión a cambio de una comisión por cada venta."
                     }
                 ]
             },
             {
                 id: "loan_expansion",
-                text: "Necesitas un préstamo para expandirte. ¿Qué opción tomas?",
+                text: "Necesitas financiación para una expansión ambiciosa. ¿Qué fuente de capital eliges?",
                 options: [
                     {
-                        label: "Banco Tradicional: Recibes $5,000. Costos de transacción (estudio de crédito, comisiones) fijos de $300.",
-                        cost: -5000, // Ingreso, pero se resta el costo de transacción
+                        label: "Banco Tradicional: Recibes $5,000. Costos de transacción (estudio de crédito, comisiones) fijos de $300. Tasa de interés del 5% sobre el préstamo.",
+                        cost: -5000, // Ingreso (monto del préstamo)
                         transactionCost: 300,
+                        interestRate: 0.05, // 5% de interés sobre el monto del préstamo
                         isIncome: true,
-                        message: "Obtuviste un préstamo bancario. Los costos iniciales son claros."
+                        message: "¡Movimiento estratégico! Aseguraste un préstamo bancario con términos claros y un costo de interés manejable. ¡Tu expansión está en marcha!"
                     },
                     {
-                        label: "Inversor Ángel: Recibes $7,000. Costos de transacción (negociación, legal) variables: 5% del monto recibido.",
-                        cost: -7000, // Ingreso, pero se resta el costo de transacción
-                        transactionCost: 0.05, // Porcentaje
+                        label: "Préstamo No Regulado: Recibes $10,000. Costos de transacción (gestión dudosa) del 10%. Riesgo de fraude del 40%.",
+                        cost: -10000, // Monto bruto del préstamo recibido
+                        transactionCost: 0.10, // Costo de transacción porcentual
                         isPercentage: true,
                         isIncome: true,
-                        message: "Un inversor ángel te apoya. Costos de transacción más altos, pero más capital."
+                        randomOutcome: {
+                            winChance: 0.60, // 60% de probabilidad de no fraude
+                            winAmount: 0, // No hay impacto adicional (después de recibir el préstamo y pagar el costo de transacción)
+                            winMessage: "La operación no regulada fue un éxito, ¡capital asegurado! Has superado el riesgo.",
+                            loseAmount: -3000, // Pérdida adicional debido a fraude (ej. pierdes el préstamo + 3k de penalización)
+                            loseMessage: "¡Alerta de fraude! La operación no regulada resultó en una pérdida devastadora de capital. Tu reputación también se ve afectada."
+                        },
+                        message: "¡Apuesta de alto riesgo! Optaste por financiación no regulada. El resultado es incierto, pero la recompensa podría ser enorme... o la caída estrepitosa."
                     }
                 ]
             },
@@ -261,14 +273,14 @@
                         label: "Software Estándar: Costo fijo de $600. Incluye instalación y soporte básico (costo de transacción por implementación).",
                         cost: 600,
                         transactionCost: 0,
-                        message: "Actualizaste a un software estándar. Mejora la eficiencia."
+                        message: "¡Eficiencia garantizada! Actualizaste a un software estándar, optimizando tus operaciones."
                     },
                     {
                         label: "Desarrollo a Medida: Costo inicial de $1,000. Costos de transacción variables por personalización y pruebas: 20% del costo inicial.",
                         cost: 1000,
                         transactionCost: 0.20,
                         isPercentage: true,
-                        message: "Optaste por desarrollo a medida. Más caro, pero se adapta perfectamente."
+                        message: "¡Innovación a medida! Optaste por desarrollo personalizado, una inversión mayor para una adaptación perfecta."
                     }
                 ]
             },
@@ -281,13 +293,13 @@
                         cost: -5000, // Ingreso
                         transactionCost: 500,
                         isIncome: true,
-                        message: "Adquiriste la cartera de clientes. ¡Tu base de clientes ha crecido!"
+                        message: "¡Golpe de mercado! Adquiriste la cartera de clientes, expandiendo tu dominio."
                     },
                     {
                         label: "No Comprar: No hay inversión ni riesgo, pero pierdes la oportunidad de crecimiento.",
                         cost: 0,
                         transactionCost: 0,
-                        message: "Decidiste no comprar. No hay cambios en tu capital."
+                        message: "¡Oportunidad perdida! Decidiste no comprar, manteniendo el status quo."
                     }
                 ]
             },
@@ -301,14 +313,14 @@
                         transactionCost: 0,
                         moralCost: 1500, // Costo futuro implícito
                         setsFlag: "choseQuestionableSupplier", // Nueva propiedad para establecer el estado del juego
-                        message: "Continuaste con el proveedor actual. Ahorraste dinero, pero la moralidad podría pasarte factura."
+                        message: "¡Decisión arriesgada! Continuaste con el proveedor actual, priorizando el ahorro, pero con riesgo de reputación."
                     },
                     {
                         label: "Cambiar a Proveedor Ético: Costo del producto: $5,000. Costos de transacción (due diligence, nuevos contratos) de $300. Beneficio de $500 en imagen de marca.",
                         cost: 5000,
                         transactionCost: 300,
                         moralBenefit: 500, // Beneficio futuro implícito
-                        message: "Cambiaste a un proveedor ético. Tu imagen de marca mejora, pero la inversión inicial es mayor."
+                        message: "¡Juego limpio, gran jugada! Cambiaste a un proveedor ético, fortaleciendo tu imagen de marca a pesar de la inversión."
                     }
                 ]
             },
@@ -322,14 +334,14 @@
                         transactionCost: 0,
                         moralCost: 700, // Costo futuro implícito
                         isIncome: true,
-                        message: "Eliminaste el subsidio de almuerzo. Ahorraste dinero, pero la moral del equipo podría resentirse."
+                        message: "¡Corte de gastos! Eliminaste el subsidio, un ahorro directo, pero la moral del equipo podría ser un costo oculto."
                     },
                     {
                         label: "Mantener Subsidio: Sin ahorro inmediato. Beneficio de $300 en aumento de productividad por alta moral.",
                         cost: 0,
                         transactionCost: 0,
                         moralBenefit: 300, // Beneficio futuro implícito
-                        message: "Mantuviste el subsidio de almuerzo. La moral del equipo sigue alta, lo que podría traducirse en mayor productividad."
+                        message: "¡Inversión en talento! Mantuviste el subsidio, apostando por la moral alta y la productividad a largo plazo."
                     }
                 ]
             },
@@ -344,14 +356,14 @@
                         transactionCost: 0,
                         moralBenefit: 1000, // Refleja ganancia a largo plazo en imagen/eficiencia
                         setsFlag: "choseEcoFriendlyOption", // Establece la bandera de decisión ambiental
-                        message: "Invertiste en sostenibilidad. Tu compromiso ambiental es reconocido."
+                        message: "¡Visión de futuro! Invertiste en sostenibilidad, reforzando tu compromiso ambiental y atractivo para inversores."
                     },
                     {
                         label: "Mantener Status Quo: Ahorro de $500. Riesgo de $800 en futuras multas o pérdida de clientes por mala imagen.",
                         cost: -500, // Ahorro, por lo que es un impacto positivo en el capital
                         transactionCost: 0,
                         moralCost: 800, // Refleja futuras penalizaciones/pérdidas
-                        message: "Mantuviste el status quo ambiental. Ahorraste dinero, pero el riesgo aumenta."
+                        message: "¡Riesgo ambiental! Mantuviste el status quo, un ahorro a corto plazo con riesgos futuros."
                     }
                 ]
             },
@@ -366,9 +378,9 @@
                         randomOutcome: {
                             winChance: 0.30,
                             winAmount: 15000,
-                            winMessage: "¡Tu inversión en I+D de alto riesgo fue un éxito rotundo! Nuevo producto lanzado.",
+                            winMessage: "¡Tu apuesta en I+D de alto riesgo fue un éxito rotundo! Nuevo producto lanzado, ¡un golpe maestro!",
                             loseAmount: -2000,
-                            loseMessage: "La inversión en I+D de alto riesgo no dio frutos. Pérdida de capital."
+                            loseMessage: "La inversión en I+D de alto riesgo no dio frutos. Una derrota en el laboratorio."
                         },
                         message: "Invertiste en I+D de alto riesgo."
                     },
@@ -377,7 +389,7 @@
                         cost: 1000,
                         transactionCost: 100,
                         fixedOutcome: 1500, // Ganancia fija
-                        message: "Optaste por mejoras incrementales. Un camino seguro con ganancias modestas."
+                        message: "¡Progreso constante! Optaste por mejoras incrementales, un camino seguro hacia ganancias modestas pero firmes."
                     }
                 ]
             },
@@ -396,7 +408,7 @@
                         label: "Rechazar Inversión: Mantienes el 100% de la propiedad, pero no recibes capital adicional.",
                         cost: 0,
                         transactionCost: 0,
-                        message: "Rechazaste la inversión. No hay cambios en tu capital."
+                        message: "¡Independencia ante todo! Rechazaste la inversión, manteniendo el control total de tu empresa."
                     }
                 ]
             },
@@ -408,13 +420,13 @@
                         label: "Comprar en Volumen: Inviertes $7,000. Ahorras $1,000 en el costo unitario de los productos, pero hay un costo de almacenamiento (transacción) de $300.",
                         cost: 7000 - 1000, // Costo real después del descuento
                         transactionCost: 300,
-                        message: "Compraste en volumen. Ahorraste a largo plazo, pero incurriste en costos de almacenamiento."
+                        message: "¡Negocio inteligente! Compraste en volumen, asegurando ahorros a largo plazo a pesar de los costos de almacenamiento."
                     },
                     {
                         label: "Comprar Cantidad Normal: Pagas $5,000. Sin costos adicionales, pero sin el descuento por volumen.",
                         cost: 5000,
                         transactionCost: 0,
-                        message: "Compraste la cantidad normal. Sin cambios significativos."
+                        message: "¡Cautela en la compra! Optaste por la cantidad normal, sin grandes cambios."
                     }
                 ]
             },
@@ -430,9 +442,9 @@
                         randomOutcome: { // Resultado por defecto
                             winChance: 0.30,
                             winAmount: 10000,
-                            winMessage: "¡Felicidades, ganaste el contrato gubernamental!",
+                            winMessage: "¡Contrato asegurado! ¡Una victoria clave en la licitación gubernamental!",
                             loseAmount: 0, // Solo se pierde el costo de preparación si no se gana
-                            loseMessage: "La licitación gubernamental fue rechazada."
+                            loseMessage: "Revés en la licitación. El contrato gubernamental se escapó."
                         },
                         message: "Te presentaste a la licitación."
                     },
@@ -456,9 +468,9 @@
                         randomOutcome: {
                             winChance: 0.80, // Alta probabilidad de multa pequeña
                             winAmount: -200, // Multa pequeña
-                            winMessage: "La auditoría concluyó con una multa menor por falta de supervisión.",
+                            winMessage: "¡Daño controlado! La auditoría resultó en una multa menor, un golpe superable.",
                             loseAmount: -2000, // Multa mayor
-                            loseMessage: "A pesar de la cooperación, la multa fue considerable."
+                            loseMessage: "¡Golpe duro! A pesar de la cooperación, la multa fue considerable."
                         },
                         message: "Decidiste cooperar con la auditoría."
                     },
@@ -469,9 +481,9 @@
                         randomOutcome: {
                             winChance: 0.20, // Baja probabilidad de multa pequeña
                             winAmount: -500, // Multa media
-                            winMessage: "Lograste minimizar la multa, pero tu reputación está en riesgo.",
+                            winMessage: "¡Apuesta arriesgada! Minimizaste la multa, pero tu reputación pende de un hilo.",
                             loseAmount: -5000, // Multa muy grande
-                            loseMessage: "La falta de cooperación resultó en una multa severa y un golpe a tu imagen."
+                            loseMessage: "¡Desastre total! La falta de cooperación te costó una multa severa y un golpe devastador a tu imagen."
                         },
                         message: "Decidiste minimizar la cooperación."
                     }
@@ -484,13 +496,13 @@
         const fixedScenarioOrder = [
             "raw_material_purchase",
             "employee_hiring",
-            "product_sales",
+            "product_sales", // Ahora incluye los beneficios de poder de mercado y estimación de ingresos
             "loan_expansion",
             "accounting_system",
             "customer_portfolio",
             "supplier_morality", // Aquí se toma la decisión del proveedor cuestionable
             "employee_benefits",
-            "environmental_costs", // NUEVO: Escenario de costos ambientales
+            "environmental_costs", // Escenario de costos ambientales
             "rd_investment",
             "investor_offer", // Este escenario puede ser afectado por la decisión ambiental
             "volume_discount",
@@ -527,9 +539,7 @@
         // Función para manejar la decisión del jugador
         function makeDecision(optionIndex) {
             hideMessage(); // Oculta el mensaje anterior
-            // Obtenemos el escenario que se mostró, no el que está en 'round' directamente
-            // ya que 'loadNextScenario' puede haberlo modificado o insertado.
-            const currentScenarioId = scenarioText.dataset.currentScenarioId; // Obtenemos el ID del escenario actual
+            const currentScenarioId = scenarioText.dataset.currentScenarioId;
             const currentScenario = allScenarios.find(s => s.id === currentScenarioId);
 
             if (!currentScenario) {
@@ -539,58 +549,92 @@
 
             const chosenOption = currentScenario.options[optionIndex];
 
-            let actualValue = chosenOption.cost;
+            let actualValue = chosenOption.cost; // Este es el costo base o el ingreso
             let calculatedTransactionCost = 0;
+            let messageExtension = ""; // Para mensajes específicos como intereses o fraude
 
+            // Calcular costo de transacción base
             if (chosenOption.isPercentage) {
                 calculatedTransactionCost = Math.abs(actualValue) * chosenOption.transactionCost;
             } else {
                 calculatedTransactionCost = chosenOption.transactionCost;
             }
 
-            // Actualizar totales para el resumen
+            // --- Aplicar impacto financiero base y rastrear totales ---
             if (chosenOption.isIncome) {
-                totalRevenueGenerated += Math.abs(actualValue); // Ingreso bruto
-                capital += (Math.abs(actualValue) - calculatedTransactionCost);
+                capital += Math.abs(actualValue); // Sumar el ingreso bruto/monto del préstamo
+                totalRevenueGenerated += Math.abs(actualValue);
             } else {
-                totalCostsIncurred += actualValue; // Gasto bruto
-                capital -= (actualValue + calculatedTransactionCost);
+                capital -= actualValue; // Restar el costo bruto
+                totalCostsIncurred += actualValue;
             }
+
+            // Aplicar costos de transacción
+            capital -= calculatedTransactionCost;
             totalTransactionCosts += calculatedTransactionCost;
+
+
+            // --- Manejo específico para costos adicionales del escenario de Expansión del Préstamo ---
+            if (currentScenario.id === "loan_expansion") {
+                if (optionIndex === 0) { // Banco Tradicional
+                    let loanAmount = Math.abs(chosenOption.cost); // 5000
+                    let interestCost = loanAmount * chosenOption.interestRate; // 5000 * 0.05 = 250
+                    
+                    capital -= interestCost; // Restar intereses
+                    totalCostsIncurred += interestCost; // Rastrear intereses como un costo
+                    messageExtension = ` (Intereses: $${interestCost.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})`;
+                }
+                // El resultado aleatorio del Préstamo No Regulado se maneja en el bloque randomOutcome
+            }
 
 
             // Aplicar costos/beneficios de moralidad
             if (chosenOption.moralCost) {
                 capital -= chosenOption.moralCost;
                 totalMoralImpact -= chosenOption.moralCost;
-                chosenOption.message += ` (Costo moral incurrido: $${chosenOption.moralCost.toLocaleString('en-US')})`;
             }
             if (chosenOption.moralBenefit) {
                 capital += chosenOption.moralBenefit;
                 totalMoralImpact += chosenOption.moralBenefit;
-                chosenOption.message += ` (Beneficio moral obtenido: $${chosenOption.moralBenefit.toLocaleString('en-US')})`;
             }
+            if (chosenOption.localEconomyBenefit) {
+                capital += chosenOption.localEconomyBenefit;
+                totalMoralImpact += chosenOption.localEconomyBenefit; // Considerar como impacto moral positivo
+            }
+            if (chosenOption.marketPowerBenefit) {
+                capital += chosenOption.marketPowerBenefit;
+                totalMoralImpact += chosenOption.marketPowerBenefit; // Considerar como impacto moral positivo/estratégico
+            }
+            if (chosenOption.estimatedIncome) { // Para product_sales -> Tienda Física Propia
+                capital += chosenOption.estimatedIncome;
+                totalRevenueGenerated += chosenOption.estimatedIncome;
+            }
+
 
             // Aplicar resultados aleatorios o fijos para escenarios complejos
             if (chosenOption.randomOutcome) {
                 let outcomeMessage = "";
-                let outcomeImpact = 0;
+                let outcomeImpact = 0; // Este es el impacto NETO del evento aleatorio en sí
+
                 if (Math.random() < chosenOption.randomOutcome.winChance) {
                     outcomeImpact = chosenOption.randomOutcome.winAmount;
                     outcomeMessage = chosenOption.randomOutcome.winMessage;
-                    totalRevenueGenerated += outcomeImpact; // Sumar al ingreso si es positivo
+                    totalRevenueGenerated += outcomeImpact; // Si winAmount es positivo, es ingreso
                 } else {
                     outcomeImpact = chosenOption.randomOutcome.loseAmount;
                     outcomeMessage = chosenOption.randomOutcome.loseMessage;
-                    totalCostsIncurred += Math.abs(outcomeImpact); // Sumar al costo si es negativo
+                    totalCostsIncurred += Math.abs(outcomeImpact); // Si loseAmount es negativo, es un costo
                 }
-                capital += outcomeImpact;
+                capital += outcomeImpact; // Aplicar el impacto neto del evento aleatorio
                 chosenOption.message += ` ${outcomeMessage}`;
-            } else if (chosenOption.fixedOutcome) {
+            } else if (chosenOption.fixedOutcome) { // Para resultados fijos (como I+D incremental)
                 capital += chosenOption.fixedOutcome;
-                totalRevenueGenerated += chosenOption.fixedOutcome; // Sumar al ingreso
+                totalRevenueGenerated += chosenOption.fixedOutcome;
                 chosenOption.message += ` (Ganancia adicional: $${chosenOption.fixedOutcome.toLocaleString('en-US')})`;
             }
+
+            // Añadir extensión del mensaje
+            chosenOption.message += messageExtension;
 
             // --- Actualizar Estado del Juego basado en la decisión ---
             if (currentScenario.id === "supplier_morality" && optionIndex === 0) {
@@ -667,7 +711,7 @@
                         cost: -9000, // Más ingreso
                         transactionCost: 300, // Menor costo de transacción
                         isIncome: true,
-                        message: "Aceptaste la inversión. Tu reputación sostenible atrajo mejores términos."
+                        message: "¡Victoria en financiación! Tu reputación sostenible atrajo una inversión con términos inmejorables."
                     };
                 } else {
                     scenarioToDisplay.text = "Un inversor cauteloso te ofrece capital, pero con términos más estrictos debido a preocupaciones sobre prácticas empresariales. ¿Aceptas?";
@@ -676,7 +720,7 @@
                         cost: -7000, // Menos ingreso
                         transactionCost: 500, // Mayor costo de transacción
                         isIncome: true,
-                        message: "Aceptaste la inversión. Los términos son menos favorables."
+                        message: "¡Compromiso forzado! Aceptaste la inversión, pero los términos son menos favorables de lo esperado."
                     };
                 }
             }
@@ -731,9 +775,9 @@
 
             let finalMessage = "";
             if (hasWon) {
-                finalMessage = `<span class="game-win-message">¡Felicidades, ${companyName}! Has gestionado tu empresa con éxito.</span>`;
+                finalMessage = `<span class="game-win-message">¡Éxito rotundo, ${companyName}! Has demostrado una maestría excepcional en la gestión empresarial.</span>`;
             } else {
-                finalMessage = `<span class="game-over-message">¡Juego Terminado para ${companyName}! Tu empresa ha quebrado o no alcanzó los objetivos.</span>`;
+                finalMessage = `<span class="game-over-message">¡Derrota empresarial para ${companyName}! Tu empresa no logró superar los desafíos.</span>`;
             }
 
             const netProfitLoss = capital - initialCapitalFixed;
